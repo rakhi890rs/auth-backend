@@ -15,11 +15,12 @@ router.post('/register', async (req, res) => {
     const token = jwt.sign({
         id: user._id,
     }, process.env.JWT_SECRET);
+    res.cookie("token")
 
     res.status(201).json({
         message: "user registered successfully",
-        user,
-        token
+        user
+        
     });
 });
 
@@ -48,5 +49,35 @@ router.post('/login', async (req, res) => {
         message: "user loggeIn successfully"
     });
 });
+
+
+router.get('/user',async(req,res)=>{
+  try{
+    const {token} = req.cookies;
+
+    if(!token){
+        return res.status(401).json({
+            message:"Unauthorized"
+        })
+    }
+
+    const decoded=jwt.verify(token,process.env.JWT_SECRET)
+
+    const user = await userModel.findOne({
+        _id:decoded.id
+    }).select("-password - __v")
+    res.status(200).json({
+        message:"User data fetched successfully",
+        user
+    })
+    res.send(decoded)
+
+}catch(err){
+    return res.status(401).json({
+        message:"Unauthorized-Invalid token"
+    })
+}
+})
+
 
 module.exports = router;
